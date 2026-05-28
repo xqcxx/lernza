@@ -14,33 +14,11 @@ import { safeContractCall } from "../error-utils"
 
 const CONTRACT_ID = import.meta.env.VITE_QUEST_CONTRACT_ID || ""
 
-export const Visibility = {
-  Public: 0,
-  Private: 1,
-} as const
-export type Visibility = (typeof Visibility)[keyof typeof Visibility]
-
-export const QuestStatus = {
-  Active: 0,
-  Archived: 1,
-} as const
-export type QuestStatus = (typeof QuestStatus)[keyof typeof QuestStatus]
-
-export interface QuestInfo {
-  id: number
-  owner: string
-  name: string
-  description: string
-  category: string
-  tags: string[]
-  tokenAddr: string
-  createdAt: number
-  visibility: Visibility
-  status: QuestStatus
-  deadline: number
-  maxEnrollees?: number
-  verified: boolean
-}
+// Re-export so consumers can import the canonical contract types from either
+// `@/lib/contracts/quest` or `@/lib/contract-types`. Keeping both import paths
+// active matches the existing call sites; the types behind them are identical.
+export { Visibility, QuestStatus, type QuestInfo } from "../contract-types"
+import { Visibility, QuestStatus, type QuestInfo } from "../contract-types"
 
 export class QuestClient {
   private contract: Contract | null

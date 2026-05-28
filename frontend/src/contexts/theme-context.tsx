@@ -12,7 +12,8 @@ function getInitialTheme(): Theme {
     // Ignore localStorage errors
   }
 
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
+  // Default to light; respect the user's explicit choice once they toggle.
+  return "light"
 }
 
 interface ThemeProviderProps {
@@ -37,4 +38,3 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 
   return <ThemeContext.Provider value={{ theme, toggleTheme }}>{children}</ThemeContext.Provider>
 }
-

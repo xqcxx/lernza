@@ -1,3 +1,9 @@
+/* eslint-disable react-refresh/only-export-components --
+   This module is the routing manifest: by design it exports both the
+   `router` instance and the lazy() page wrappers it composes. Splitting
+   each lazy() into its own file would scatter the routing graph for zero
+   runtime benefit. Fast Refresh works fine in practice; only the HMR
+   linter complains. */
 import { lazy, Suspense, type ReactNode } from "react"
 import { createBrowserRouter } from "react-router-dom"
 import { AppShell } from "@/components/app-shell"

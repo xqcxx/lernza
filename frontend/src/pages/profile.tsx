@@ -18,6 +18,7 @@ import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { PageContainer } from "@/components/page-container"
 import { useWallet } from "@/hooks/use-wallet"
 import { useContractData } from "@/hooks/use-async-data"
 import { useUserRole } from "@/hooks/use-user-role"
@@ -327,7 +328,7 @@ export function Profile() {
   }
 
   return (
-    <div className="relative mx-auto max-w-6xl px-4 py-8 sm:px-6">
+    <PageContainer className="relative">
       <div className="bg-grid-dots pointer-events-none absolute inset-0 opacity-30" />
 
       {/* Profile header */}
@@ -766,6 +767,6 @@ export function Profile() {
           </div>
         )}
       </div>
-    </div>
+    </PageContainer>
   )
 }

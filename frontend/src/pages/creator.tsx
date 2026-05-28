@@ -1,18 +1,20 @@
-import { useParams, useNavigate } from "react-router-dom";
-import { Users, Target, Award, Sparkles, LayoutDashboard, ChevronRight } from "lucide-react";
-import { useContractData } from "@/hooks/use-async-data";
-import { questClient } from "@/lib/contracts/quest";
-import { rewardsClient } from "@/lib/contracts/rewards";
-import { milestoneClient } from "@/lib/contracts/milestone";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { SmartError } from "@/components/error-states";
-import { SkeletonQuestList } from "@/components/ui/skeleton";
-import { formatTokens } from "@/lib/utils";
+import { useParams, useNavigate } from "react-router-dom"
+import { Users, Target, Award, Sparkles, LayoutDashboard, ChevronRight } from "lucide-react"
+import { useContractData } from "@/hooks/use-async-data"
+import { questClient } from "@/lib/contracts/quest"
+import { rewardsClient } from "@/lib/contracts/rewards"
+import { milestoneClient } from "@/lib/contracts/milestone"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { SmartError } from "@/components/error-states"
+import { SkeletonQuestList } from "@/components/ui/skeleton"
+import { formatTokens, shortenAddress } from "@/lib/utils"
+import { PageContainer } from "@/components/page-container"
+import { PageHeader } from "@/components/page-header"
 
 export function CreatorProfile() {
-  const { address } = useParams<{ address: string }>();
-  const navigate = useNavigate();
+  const { address } = useParams<{ address: string }>()
+  const navigate = useNavigate()
 
   const {
     data: profileData,
@@ -22,40 +24,40 @@ export function CreatorProfile() {
   } = useContractData(
     `creator-profile-${address}`,
     async () => {
-      if (!address) return null;
+      if (!address) return null
 
       // 1. Get all quests owned by this creator
-      const quests = await questClient.listQuestsByOwner(address);
+      const quests = await questClient.listQuestsByOwner(address)
 
       // 2. Aggregate stats
-      let totalDistributed = 0n;
-      let totalCertificates = 0;
-      
+      let totalDistributed = 0n
+      let totalCertificates = 0
+
       const questStats = await Promise.all(
-        quests.map(async (q) => {
+        quests.map(async q => {
           const [enrollees, milestoneCount, poolBalance] = await Promise.all([
             questClient.getEnrollees(q.id),
             milestoneClient.getMilestoneCount(q.id),
             rewardsClient.getPoolBalance(q.id),
-          ]);
+          ])
 
           // For each quest, we can count total completions as certificates
           // This is an approximation as requested: "aggregate: quests, rewards, certificates"
           // We'll sum up completions across all enrollees for each quest
           const completions = await Promise.all(
             enrollees.map(enrollee => milestoneClient.getEnrolleeCompletions(q.id, enrollee))
-          );
-          const questCompletions = completions.reduce((sum, count) => sum + count, 0);
-          totalCertificates += questCompletions;
+          )
+          const questCompletions = completions.reduce((sum, count) => sum + count, 0)
+          totalCertificates += questCompletions
 
           // Note: Total Distributed usually means what was PAID OUT.
-          // Since we don't have a direct 'get_distributed_by_owner' yet, 
+          // Since we don't have a direct 'get_distributed_by_owner' yet,
           // we'll use a placeholder or sum up some historical data if available.
           // For now, let's just show a realistic aggregated number based on completions.
           // Assuming each completion pays out (Total Pool / Milestone Count)
           if (milestoneCount > 0) {
-              const perMilestone = poolBalance / BigInt(milestoneCount);
-              totalDistributed += perMilestone * BigInt(questCompletions);
+            const perMilestone = poolBalance / BigInt(milestoneCount)
+            totalDistributed += perMilestone * BigInt(questCompletions)
           }
 
           return {
@@ -63,58 +65,61 @@ export function CreatorProfile() {
             enrolleeCount: enrollees.length,
             milestoneCount,
             poolBalance,
-          };
+          }
         })
-      );
+      )
 
       return {
         quests: questStats,
         totalDistributed,
         totalQuests: quests.length,
         totalCertificates,
-      };
+      }
     },
     {
       enabled: !!address,
       dependencies: [address],
     }
-  );
+  )
 
   if (error) {
     return (
-      <div className="mx-auto max-w-7xl px-4 py-8">
+      <PageContainer>
         <SmartError message={error} onRetry={() => void refetch()} />
-      </div>
-    );
+      </PageContainer>
+    )
   }
 
   if (isLoading || !profileData) {
     return (
-      <div className="mx-auto max-w-7xl px-4 py-8">
-        <div className="mb-8 h-32 animate-pulse bg-muted border-[3px] border-border shadow-[6px_6px_0_var(--color-border)]" />
+      <PageContainer>
+        <div className="border-border bg-muted mb-8 h-32 animate-pulse border-[3px] shadow-[6px_6px_0_var(--color-border)]" />
         <SkeletonQuestList count={3} />
-      </div>
-    );
+      </PageContainer>
+    )
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-      {/* Profile Header */}
-      <div className="bg-primary border-border animate-fade-in-up relative mb-8 overflow-hidden border-[3px] p-6 shadow-[6px_6px_0_var(--color-border)] sm:p-8">
-        <div className="bg-diagonal-lines pointer-events-none absolute inset-0 opacity-30" />
-        <div className="relative flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-          <div>
-            <div className="mb-2 flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              <span className="text-sm font-bold tracking-wider uppercase">Creator Profile</span>
-            </div>
-            <h1 className="text-2xl font-black break-all sm:text-4xl">{address}</h1>
-          </div>
-        </div>
-      </div>
+    <PageContainer>
+      <PageHeader
+        eyebrow={
+          <>
+            <Users className="h-4 w-4" />
+            Creator Profile
+          </>
+        }
+        title={
+          <span className="font-mono break-all">
+            {address ? shortenAddress(address, 8) : "Unknown creator"}
+          </span>
+        }
+        subtitle={
+          address && <span className="font-mono text-xs break-all sm:text-sm">{address}</span>
+        }
+      />
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 gap-4 mb-8 sm:grid-cols-3">
+      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Card className="animate-fade-in-up stagger-1">
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
@@ -122,8 +127,12 @@ export function CreatorProfile() {
                 <Sparkles className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-muted-foreground text-xs font-bold uppercase">Total Distributed</p>
-                <p className="text-xl font-black">{formatTokens(profileData.totalDistributed)} USDC</p>
+                <p className="text-muted-foreground text-xs font-bold uppercase">
+                  Total Distributed
+                </p>
+                <p className="text-xl font-black">
+                  {formatTokens(profileData.totalDistributed)} USDC
+                </p>
               </div>
             </div>
           </CardContent>
@@ -150,7 +159,9 @@ export function CreatorProfile() {
                 <Award className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-muted-foreground text-xs font-bold uppercase">Certificates Issued</p>
+                <p className="text-muted-foreground text-xs font-bold uppercase">
+                  Certificates Issued
+                </p>
                 <p className="text-xl font-black">{profileData.totalCertificates}</p>
               </div>
             </div>
@@ -160,7 +171,7 @@ export function CreatorProfile() {
 
       {/* Quests List */}
       <div className="animate-fade-in-up stagger-4">
-        <h2 className="flex items-center gap-2 text-xl font-black mb-5">
+        <h2 className="mb-5 flex items-center gap-2 text-xl font-black">
           <LayoutDashboard className="h-5 w-5" /> Created Quests
         </h2>
 
@@ -215,6 +226,6 @@ export function CreatorProfile() {
           )}
         </div>
       </div>
-    </div>
-  );
+    </PageContainer>
+  )
 }

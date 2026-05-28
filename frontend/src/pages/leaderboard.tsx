@@ -9,6 +9,8 @@ import { formatTokens, shortenAddress } from "@/lib/utils"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { PrefetchLink } from "@/components/PrefetchLink"
+import { PageContainer } from "@/components/page-container"
+import { PageHeader } from "@/components/page-header"
 
 type ActiveTab = "earners" | "quests"
 
@@ -122,10 +124,7 @@ export function Leaderboard() {
       const more = await fetchTopEarners(newOffset)
       if (more.length > 0) {
         const nextRank = allEarners.length + 1
-        setAllEarners(prev => [
-          ...prev,
-          ...more.map((e, i) => ({ ...e, rank: nextRank + i })),
-        ])
+        setAllEarners(prev => [...prev, ...more.map((e, i) => ({ ...e, rank: nextRank + i }))])
         setEarnersOffset(newOffset)
       }
     } catch {
@@ -142,10 +141,7 @@ export function Leaderboard() {
       const more = await fetchMostActiveQuests(newOffset)
       if (more.length > 0) {
         const nextRank = allQuests.length + 1
-        setAllQuests(prev => [
-          ...prev,
-          ...more.map((q, i) => ({ ...q, rank: nextRank + i })),
-        ])
+        setAllQuests(prev => [...prev, ...more.map((q, i) => ({ ...q, rank: nextRank + i }))])
         setQuestsOffset(newOffset)
       }
     } catch {
@@ -191,21 +187,19 @@ export function Leaderboard() {
   const isLoading = activeTab === "earners" ? earnersLoading : questsLoading
   const error = activeTab === "earners" ? earnersError : questsError
   const isEmpty = activeTab === "earners" ? allEarners.length === 0 : allQuests.length === 0
-  const displayData = activeTab === "earners" ? allEarners : allQuests
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="border-border bg-primary mb-4 inline-flex items-center gap-2 border-[3px] px-4 py-2 shadow-[4px_4px_0_var(--color-border)]">
-          <Trophy className="h-5 w-5" />
-          <span className="text-sm font-black tracking-wider uppercase">Leaderboard</span>
-        </div>
-        <h1 className="text-3xl font-black tracking-tight sm:text-4xl">Top performers</h1>
-        <p className="text-muted-foreground mt-1 text-sm font-medium">
-          Refreshes automatically every 5 minutes.
-        </p>
-      </div>
+    <PageContainer width="narrow">
+      <PageHeader
+        eyebrow={
+          <>
+            <Trophy className="h-4 w-4" />
+            Leaderboard
+          </>
+        }
+        title="Top performers"
+        subtitle="Refreshes automatically every 5 minutes."
+      />
 
       {/* Tabs */}
       <div className="border-border mb-6 flex gap-0 border-[3px] shadow-[4px_4px_0_var(--color-border)]">
@@ -258,7 +252,7 @@ export function Leaderboard() {
       {!isLoading && !error && !isEmpty && activeTab === "earners" && (
         <>
           <ol className="space-y-2">
-            {displayData.map(entry => (
+            {allEarners.map(entry => (
               <li
                 key={entry.address}
                 className="border-border bg-card flex items-center gap-4 border-[2px] px-4 py-3 shadow-[3px_3px_0_var(--color-border)]"
@@ -286,7 +280,7 @@ export function Leaderboard() {
       {!isLoading && !error && !isEmpty && activeTab === "quests" && (
         <>
           <ol className="space-y-2">
-            {displayData.map(entry => (
+            {allQuests.map(entry => (
               <PrefetchLink
                 key={entry.id}
                 to={`/quest/${entry.id}`}
@@ -306,6 +300,6 @@ export function Leaderboard() {
           </div>
         </>
       )}
-    </div>
+    </PageContainer>
   )
 }

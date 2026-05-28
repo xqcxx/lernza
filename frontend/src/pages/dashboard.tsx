@@ -20,37 +20,21 @@ import { EmptyState } from "@/components/ui/async-states"
 import { SkeletonQuestList } from "@/components/ui/skeleton"
 import { SmartError } from "@/components/error-states"
 import { useWallet } from "@/hooks/use-wallet"
-import { questClient, type QuestInfo } from "@/lib/contracts/quest"
+import { questClient } from "@/lib/contracts/quest"
 import { milestoneClient } from "@/lib/contracts/milestone"
 import { rewardsClient } from "@/lib/contracts/rewards"
-import type { WorkspaceInfo } from "@/lib/contract-types"
 import { formatTokens } from "@/lib/utils"
 
 // Sub-components
 import { PersonalProgress } from "./dashboard/personal-progress"
 import { TrendingQuests } from "./dashboard/trending-quests"
 import { RecentActivity } from "./dashboard/recent-activity"
-import { QuestStatusBadge } from "@/components/quest-status-badge"
 
 // Lazy-loaded chart
 const EarningsChart = React.lazy(() => import("./dashboard/earnings-chart"))
 const DASHBOARD_QUEST_PAGE_SIZE = 12
 const TRENDING_QUEST_LIMIT = 2
 const RECENT_ACTIVITY_LIMIT = 5
-
-function toWorkspaceInfo(quest: QuestInfo): WorkspaceInfo {
-  return {
-    id: quest.id,
-    owner: quest.owner,
-    name: quest.name,
-    description: quest.description,
-    token_addr: quest.tokenAddr,
-    created_at: quest.createdAt,
-    visibility: quest.visibility,
-    max_enrollees: quest.maxEnrollees,
-    verified: quest.verified,
-  }
-}
 
 export function Dashboard() {
   const navigate = useNavigate()
@@ -170,29 +154,26 @@ export function Dashboard() {
     userEarnings = 0n,
   } = dashboardData || {}
 
-  const filteredWorkspaces =
+  const filteredQuests =
     filter === "owned" ? ownedQuests : filter === "enrolled" ? enrolledQuests : publicQuests
 
   // Apply preset filters
-  let presetFilteredWorkspaces = filteredWorkspaces
+  let presetFilteredQuests = filteredQuests
   const now = Math.floor(Date.now() / 1000)
 
   if (preset === "ending-soon") {
-    // Show quests with deadline within 7 days
     const sevenDaysFromNow = now + 7 * 24 * 60 * 60
-    presetFilteredWorkspaces = filteredWorkspaces.filter(
-      ws => ws.deadline > 0 && ws.deadline > now && ws.deadline <= sevenDaysFromNow
+    presetFilteredQuests = filteredQuests.filter(
+      q => q.deadline > 0 && q.deadline > now && q.deadline <= sevenDaysFromNow
     )
   } else if (preset === "recently-funded") {
-    // Show quests created in the last 30 days
     const thirtyDaysAgo = now - 30 * 24 * 60 * 60
-    presetFilteredWorkspaces = filteredWorkspaces.filter(ws => ws.createdAt >= thirtyDaysAgo)
+    presetFilteredQuests = filteredQuests.filter(q => q.createdAt >= thirtyDaysAgo)
   } else if (preset === "recently-verified") {
-    // Show quests with verified status
-    presetFilteredWorkspaces = filteredWorkspaces.filter(ws => ws.verified)
+    presetFilteredQuests = filteredQuests.filter(q => q.verified)
   }
 
-  const visibleWorkspaces = presetFilteredWorkspaces.slice(0, DASHBOARD_QUEST_PAGE_SIZE)
+  const visibleQuests = presetFilteredQuests.slice(0, DASHBOARD_QUEST_PAGE_SIZE)
 
   const ownedCount = ownedQuests.length
   const enrolledCount = enrolledQuests.length
@@ -211,7 +192,6 @@ export function Dashboard() {
   const trendingQuests = [...publicQuests]
     .sort((a, b) => (questStats[b.id]?.enrolleeCount || 0) - (questStats[a.id]?.enrolleeCount || 0))
     .slice(0, TRENDING_QUEST_LIMIT)
-    .map(toWorkspaceInfo)
 
   const recentActivity = accessibleQuests
     .slice()
@@ -416,24 +396,24 @@ export function Dashboard() {
             {isLoading && <SkeletonQuestList className="mb-5" count={3} />}
 
             <div className="relative grid gap-5">
-              {visibleWorkspaces.map((ws, i) => {
-                const stats = questStats[ws.id] || {
+              {visibleQuests.map((quest, i) => {
+                const stats = questStats[quest.id] || {
                   enrolleeCount: 0,
                   milestoneCount: 0,
                   poolBalance: 0,
                 }
                 const totalMilestones = stats.milestoneCount
-                const completedCount = questCompletions[ws.id] || 0
+                const completedCount = questCompletions[quest.id] || 0
                 const totalReward = stats.poolBalance
                 const earnedReward =
                   totalMilestones > 0 ? (totalReward * completedCount) / totalMilestones : 0
-                const isOwned = !!address && ws.owner === address
+                const isOwned = !!address && quest.owner === address
 
                 return (
                   <PrefetchLink
-                    key={ws.id}
-                    to={`/quest/${ws.id}`}
-                    aria-label={`Open quest ${ws.name}`}
+                    key={quest.id}
+                    to={`/quest/${quest.id}`}
+                    aria-label={`Open quest ${quest.name}`}
                     className={`card-tilt group animate-fade-in-up cursor-pointer stagger-${i + 1} focus-visible:ring-ring text-left focus-visible:ring-2 focus-visible:outline-none`}
                   >
                     <Card>
@@ -442,7 +422,7 @@ export function Dashboard() {
                           <div className="flex-1">
                             <div className="mb-1 flex items-center gap-3">
                               <CardTitle className="group-hover:text-primary text-base transition-colors">
-                                {ws.name}
+                                {quest.name}
                               </CardTitle>
                               {completedCount === totalMilestones && totalMilestones > 0 && (
                                 <Badge variant="success" className="gap-1">
@@ -458,7 +438,7 @@ export function Dashboard() {
                               </Badge>
                             </div>
                             <p className="text-muted-foreground mt-1 line-clamp-1 text-sm">
-                              {ws.description}
+                              {quest.description}
                             </p>
                           </div>
                           <div className="bg-secondary border-border group-hover:bg-primary ml-3 flex h-8 w-8 flex-shrink-0 items-center justify-center border-[2px] transition-all group-hover:shadow-[2px_2px_0_var(--color-border)]">
@@ -470,10 +450,10 @@ export function Dashboard() {
                         <div className="mb-4 flex flex-wrap items-center gap-3 text-sm">
                           <Badge variant="secondary" className="gap-1">
                             <Users className="h-3 w-3" />
-                            {ws.maxEnrollees ? (
+                            {quest.maxEnrollees ? (
                               <>
-                                {stats.enrolleeCount}/{ws.maxEnrollees} enrolled (
-                                {Math.max(0, ws.maxEnrollees - stats.enrolleeCount)} left)
+                                {stats.enrolleeCount}/{quest.maxEnrollees} enrolled (
+                                {Math.max(0, quest.maxEnrollees - stats.enrolleeCount)} left)
                               </>
                             ) : (
                               <>{stats.enrolleeCount} enrolled</>
@@ -520,13 +500,13 @@ export function Dashboard() {
               })}
             </div>
 
-            {filteredWorkspaces.length > visibleWorkspaces.length && !isLoading && !loadError && (
+            {filteredQuests.length > visibleQuests.length && !isLoading && !loadError && (
               <p className="text-muted-foreground mt-4 text-xs font-bold">
-                Showing the first {visibleWorkspaces.length} quests to keep dashboard loading fast.
+                Showing the first {visibleQuests.length} quests to keep dashboard loading fast.
               </p>
             )}
 
-            {presetFilteredWorkspaces.length === 0 && !isLoading && !loadError && (
+            {presetFilteredQuests.length === 0 && !isLoading && !loadError && (
               <div className="mt-5">
                 <EmptyState
                   variant="quests"

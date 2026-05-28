@@ -49,6 +49,14 @@ export default defineConfig([
         'warn',
         { vars: 'all', varsIgnorePattern: '^_', args: 'after-used', argsIgnorePattern: '^_' },
       ],
+      // The React Compiler rules from eslint-plugin-react-hooks@6 surface design
+      // notes ("we couldn't auto-memoize this", "setState in effect is a smell").
+      // Keep them visible as warnings rather than errors — they're guidance about
+      // optimization and patterns, not correctness bugs that should fail CI.
+      'react-hooks/preserve-manual-memoization': 'warn',
+      'react-hooks/set-state-in-effect': 'warn',
+      'react-hooks/purity': 'warn',
+      'react-hooks/refs': 'warn',
       // Ban legacy "workspace" identifiers — use "quest" equivalents instead.
       // The only allowed file is the redirect shim that bridges /workspace/:id → /quest/:id.
       'no-restricted-syntax': [

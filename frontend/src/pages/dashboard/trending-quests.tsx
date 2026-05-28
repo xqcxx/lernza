@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { formatTokens } from "@/lib/utils"
 import { useTokenMetadata } from "@/hooks/use-token-metadata"
-import type { WorkspaceInfo as QuestInfo } from "@/lib/contract-types"
+import type { QuestInfo } from "@/lib/contract-types"
 import { QuestStatusBadge } from "@/components/quest-status-badge"
 
 interface QuestStats {
@@ -51,7 +51,9 @@ export function TrendingQuests({ quests, statsByQuest, onSelectQuest }: Trending
                   <div className="flex items-start justify-between">
                     <CardTitle className="line-clamp-1 text-sm font-bold">{quest.name}</CardTitle>
                     <div className="ml-2 flex items-center gap-2">
-                      <QuestStatusBadge quest={{ status: quest.status, deadline: quest.deadline } as any} />
+                      <QuestStatusBadge
+                        quest={{ status: quest.status, deadline: quest.deadline }}
+                      />
                       <Badge
                         variant="default"
                         className="bg-primary text-foreground border-border ml-2 border-[1px] px-1 text-[10px]"

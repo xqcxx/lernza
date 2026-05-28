@@ -981,9 +981,10 @@ fn test_revoke_creator_verification() {
 
     // State cleared
     assert!(!client.is_creator_verified(&creator));
-    // Storage entry removed
+    // Storage entry removed (probe inside the contract's storage frame)
     let key = DataKey::VerifiedCreator(creator);
-    assert!(!env.storage().persistent().has(&key));
+    let has_key = env.as_contract(&client.address, || env.storage().persistent().has(&key));
+    assert!(!has_key);
 }
 
 #[test]

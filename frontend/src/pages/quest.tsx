@@ -63,8 +63,15 @@ const ImportQuestDialog = lazy(() =>
 )
 import type { TransactionDetails } from "@/components/transaction-confirm-dialog"
 import type { ImportedQuest } from "@/components/import-quest-dialog"
+import { PrefetchLink } from "@/components/PrefetchLink"
 import { useWallet } from "@/hooks/use-wallet"
-import { useQuest, useMilestones, useEnrollees, useRewardPool, useQuestAuthority } from "@/hooks/use-quest-data"
+import {
+  useQuest,
+  useMilestones,
+  useEnrollees,
+  useRewardPool,
+  useQuestAuthority,
+} from "@/hooks/use-quest-data"
 import { questClient, QuestStatus, Visibility } from "@/lib/contracts/quest"
 import { milestoneClient, type MilestoneInfo } from "@/lib/contracts/milestone-client"
 import { rewardsClient } from "@/lib/contracts/rewards"
@@ -214,16 +221,7 @@ export function QuestView() {
   // Import quest state
   const [showImportDialog, setShowImportDialog] = useState(false)
   const [isImportingFile, setIsImportingFile] = useState(false)
-  const [importedData, setImportedData] = useState<{
-    name: string
-    description: string
-    milestones: Array<{
-      title: string
-      description: string
-      rewardAmount: number
-      requiresPrevious: boolean
-    }>
-  } | null>(null)
+  const [importedData, setImportedData] = useState<ImportedQuest | null>(null)
 
   const milestoneForm = useForm<MilestoneFormInput, undefined, MilestoneFormValues>({
     resolver: zodResolver(milestoneFormSchema),
@@ -269,7 +267,11 @@ export function QuestView() {
 
   // Use the first error that exists
   const loadError =
-    questData.error || milestonesData.error || enrolleesData.error || poolBalanceData.error || questAuthorityData.error
+    questData.error ||
+    milestonesData.error ||
+    enrolleesData.error ||
+    poolBalanceData.error ||
+    questAuthorityData.error
 
   // Refetch function that refreshes all data
 
@@ -323,7 +325,14 @@ export function QuestView() {
       questAuthorityData.refetch(),
       fetchCompletions(),
     ])
-  }, [questData, milestonesData, enrolleesData, poolBalanceData, questAuthorityData, fetchCompletions])
+  }, [
+    questData,
+    milestonesData,
+    enrolleesData,
+    poolBalanceData,
+    questAuthorityData,
+    fetchCompletions,
+  ])
 
   // Get raw data
   const quest = questData.data
@@ -1206,13 +1215,13 @@ export function QuestView() {
                       navigator.clipboard.writeText(questAuthorityData.data!)
                       addToast("Address copied to clipboard!", "success")
                     }}
-                    className="font-mono text-xs font-bold hover:text-primary transition-colors"
+                    className="hover:text-primary font-mono text-xs font-bold transition-colors"
                     title="Click to copy"
                   >
                     {truncateAddress(questAuthorityData.data)}
                   </button>
                   <PrefetchLink
-                    href={`/profile?address=${questAuthorityData.data}`}
+                    to={`/profile?address=${questAuthorityData.data}`}
                     className="text-primary hover:text-primary/80 transition-colors"
                     title="View creator profile"
                   >
@@ -2151,7 +2160,7 @@ export function QuestView() {
       <Suspense fallback={null}>
         <ImportQuestDialog
           isOpen={showImportDialog}
-          data={importedData as any} // Cast to any or use explicit type if available
+          data={importedData}
           onClose={() => {
             setShowImportDialog(false)
             setImportedData(null)
